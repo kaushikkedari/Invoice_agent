@@ -168,29 +168,61 @@ def display_single_invoice_result(result: Dict[str, Any], original_filename: str
         if summary:
             st.write(f"**Summary:** {summary}")
         
-        # Show specific discrepancies if available
+        # --- Display Mismatched Fields (Discrepancies) ---
         if discrepancies:
-            st.subheader("Discrepancies Found:")
+            st.subheader("Mismatched Fields Identified by LLM:")
             for item in discrepancies:
                 field = item.get('field', 'Unknown Field')
                 inv_val = item.get('invoice_value', 'N/A')
                 po_val = item.get('po_value', 'N/A')
                 notes = item.get('notes', 'No details')
                 
-                col1, col2, col3 = st.columns([2,3,3]) # Adjust column ratios as needed
-                with col1:
-                    # Add red cross next to the field name
-                    st.markdown(f"**Field:** {field} ") 
-                with col2:
-                    st.markdown(f"**Invoice:** `{str(inv_val)} ❌`")
-                with col3:
-                     st.markdown(f"**PO:** `{str(po_val)} `")
+                # Use columns for better layout
+                col_field, col_inv, col_po = st.columns([2,3,3])
+                with col_field:
+                    st.markdown(f"**Field:** {field}")
+                with col_inv:
+                    st.markdown(f"**Invoice:** `{str(inv_val)}` ❌")
+                with col_po:
+                     st.markdown(f"**PO:** `{str(po_val)}` ✅")
                 if notes:
                     st.caption(f"Note: {notes}")
                 st.markdown("---") # Separator
-        else:
-            st.info("No specific discrepancy details were provided in the validation result, although the status is invalid.")
+        # else: # Commented out: If status is invalid, summary should cover it or it implies no specific discrepancies were found by LLM, just a general invalid state.
+            # st.info("Status is invalid, but no specific discrepancy details were provided by the LLM.")
 
+        # --- NEW: Display Verified Header Fields from LLM --- 
+        verified_header_fields = validation_details.get("verified_header_fields", []) if validation_details else []
+        if verified_header_fields:
+            st.subheader("Additionally Verified Header Fields (LLM Identified Matches):")
+            for item in verified_header_fields:
+                field = item.get('field', 'Unknown Field')
+                # inv_val = item.get('invoice_value', 'N/A') # No longer displaying inv_val
+                # po_val = item.get('po_value', 'N/A')   # No longer displaying po_val
+
+                # Simplified display: Field Name with a green tick
+                st.markdown(f"- **{field}** ✅")
+            st.markdown("---") # Separator after the list of verified header fields
+
+        # --- NEW: Display Verified Line Item Details from LLM ---
+        verified_line_item_details = validation_details.get("verified_line_item_details", []) if validation_details else []
+        if verified_line_item_details:
+            st.subheader("Verified Line Item Details (LLM Identified Sub-Field Matches):")
+            for line_item_match in verified_line_item_details:
+                inv_desc = line_item_match.get("invoice_line_description", "N/A")
+                # po_desc = line_item_match.get("matched_po_line_description", "N/A") # po_desc can be shown if needed
+                fields_matched = line_item_match.get("fields_matched", [])
+                notes = line_item_match.get("notes", "")
+
+                st.markdown(f"**For Invoice Line Item:** `{inv_desc}`")
+                if fields_matched:
+                    st.markdown("Matching PO Details Found For:")
+                    for matched_field_name in fields_matched:
+                        st.markdown(f"- {matched_field_name} ✅")
+                if notes:
+                    st.caption(f"Note: {notes}")
+                st.markdown("---") # Separator
+        
     elif status == "needs_review": # Handle the review status
          st.warning("⚠️ Status: NEEDS REVIEW")
          if summary:

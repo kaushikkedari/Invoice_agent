@@ -64,37 +64,43 @@ VALIDATION_PROMPT_TEMPLATE = """You are an expert Accounts Payable assistant AI.
 {po_data_json}
 ```
 
-**Validation Criteria:**
+**Validation Criteria & Rules for Reporting:**
 1.  **PO Number Match:** Confirm the `purchase_order_number` in the invoice matches the `ponumber` in the PO data.
 2.  **Vendor Match:** Compare the `vendor_name` (and potentially address details if available) between the invoice and PO data (vendors table fields like `vendorname`).
 3.  **Line Item Details:** For each line item in the invoice:
-    *   Try to match it with a line item in the PO data based on description and/or `hsn` (`itemdescription`, `items.hsn` which should be joined into the PO data).
-    *   **CRITICAL HSN MATCH:** If an `hsn` value is present in the invoice line item, it **MUST** exactly match the `hsn` value for the corresponding matched item in the PO data. If it does not match, or if the invoice `hsn` is missing when the PO data has one, this is a **major discrepancy**, and the overall status MUST be 'invalid'.
-    *   Compare `quantity`, `unit_price`, and `line_total`. Allow for very minor rounding differences (e.g., < $0.01) in prices/totals but flag significant ones.
-    *   Flag any invoice line items that cannot be matched to the PO (by description/HSN).
-    *   Flag any PO line items not present on the invoice (unless the PO status indicates partial fulfillment, which is not explicitly provided here, so assume full invoice expected).
-4.  **Overall Totals:** Compare `subtotal_amount`, `tax_amount`, and `total_amount`. Again, allow for minor rounding differences but flag larger discrepancies.
-5.  **Invoice Date:** Compare the `invoice_date` with the `orderdate` from the PO data. Allow for minor differences in date format (e.g., "2024-03-15" vs "Mar 15, 2024").
-6.  **Invoice Number:** Compare the `invoice_number` with the `ponumber` from the PO data.
-7.  **Expected Delivery Date:** Compare the `expected_delivery_date` with the `deliverydate` from the PO data or 'invoice date' from **invoice data** if no delivery date is provided.
-8.  **Status:** Compare the `status` if any po is closed and still got invoice, flag it as invalid.
+    *   Attempt to match it with a corresponding line item in the PO data based on description and/or `hsn` (`itemdescription`, `items.hsn` which should be joined into the PO data).
+    *   **HSN Code:** If an `hsn` value is present in the invoice line item, it **MUST** exactly match the `hsn` value for the corresponding matched PO item. If not, this is a **major discrepancy** for that line item.
+    *   **Quantity:** Compare `quantity` (invoice) with `quantityordered` (PO). If they differ, this is a discrepancy for that line item.
+    *   **Unit Price:** Compare `unit_price`. Minor rounding (< $0.01) is acceptable; significant differences are discrepancies for that line item.
+    *   **Line Total:** Compare `line_total`. Minor rounding (< $0.01) is acceptable; significant differences are discrepancies for that line item.
+    *   Flag any invoice line items that cannot be matched to a PO line item.
+    *   Flag any PO line items not present on the invoice (unless PO status indicates partial fulfillment; assume full invoice expected for now).
+4.  **Overall Totals:** Compare `subtotal_amount`, `tax_amount`, and `total_amount`. Minor rounding (< $0.01) is acceptable; significant differences are discrepancies.
+5.  **Invoice Date:** Compare `invoice_date` with `orderdate` from PO. If dates are semantically different (not just format), it's a discrepancy.
+6.  **Invoice Number:** Note `invoice_number` from invoice (for record-keeping).
+7.  **Expected Delivery Date:** Compare `expected_delivery_date` (invoice) with `deliverydate` or `expecteddeliverydate` (PO).
+8.  **PO Status Check:** If PO `status` is 'Closed' or 'Fully Received', an invoice for it is generally a discrepancy.
 
-**Output Format:**
-Respond ONLY with a valid JSON object containing the following keys:
-*   `status`: String - One of "valid" or "invalid".
-    *   "valid": All key details match within acceptable tolerances, AND **HSN codes match where present**.
-    *   "invalid": Any significant discrepancies found (e.g., wrong PO number, major total mismatch, missing items, **HSN mismatch**) or minor issues.
-*   `summary`: String - A brief (1-2 sentence) summary of the validation outcome. 
-    *   **Crucially, this summary MUST accurately reflect ONLY the specific reasons listed in the `discrepancies` field below.**
-    *   If the status is 'invalid', clearly state the primary reason(s) based *only* on the listed discrepancies (e.g., "Invalid due to total amount mismatch and quantity differences.").
-    *   **Do NOT mention HSN mismatch in the summary unless an HSN discrepancy is actually listed in the `discrepancies` field.**
-*   `discrepancies`: List[Dict] - A list of specific discrepancies found. Each dictionary should have:
-    *   `field`: String - The field with the discrepancy (e.g., "Total Amount", "Line Item Quantity", "Vendor Name", "HSN Code").
-    *   `invoice_value`: Any - The value found in the invoice.
-    *   `po_value`: Any - The corresponding value found in the PO data.
-    *   `notes`: String - Explanation of the discrepancy.
-    *   Example: `{{"field": "Line Item Quantity", "invoice_value": 10, "po_value": 12, "notes": "Invoice quantity for 'A4 Paper' is less than PO quantity."}}`
-*   `confidence`: Float (optional) - Your confidence score (0.0 to 1.0) in the validation status.
+**Output Format & Instructions:**
+Respond ONLY with a valid JSON object. Ensure all string values in the JSON are properly escaped.
+
+*   `status`: String - "valid" or "invalid".
+    *   "valid": All critical details (PO Number, Vendor, Totals, HSN Codes, Line Item Quantities/Prices) match within acceptable tolerances.
+    *   "invalid": Any significant discrepancy found.
+*   `summary`: String - A brief (1-2 sentence) summary. If invalid, **clearly state the primary reason(s) based ONLY on the actual listed discrepancies** (e.g., "Invalid due to HSN mismatch on one line item and total amount difference.").
+*   `discrepancies`: List[Dict] - **ONLY list actual differences here.**
+    *   Each dictionary MUST represent a **genuine mismatch** between the invoice and PO data.
+    *   `field`: String - Specific field with the discrepancy (e.g., "Total Amount", "Line Item Quantity for 'Product X'", "Vendor Name", "HSN Code for 'Product Y'"). Be precise, especially for line items (e.g., reference the item by its description).
+    *   `invoice_value`: The actual value from the invoice that is mismatched.
+    *   `po_value`: The actual value from the PO that it was compared against.
+    *   `notes`: String - **Explanation of WHY this is a discrepancy.** Example: "Invoice quantity (10) is less than PO quantity (12)." **CRITICAL: If `invoice_value` and `po_value` in this entry are identical, DO NOT list it as a discrepancy; your reasoning is flawed. Find the true discrepancy or state that the values matched if they did.**
+*   `verified_header_fields`: List[Dict] (OPTIONAL - include if `status` is 'invalid' but some header fields *do* match).
+    *   List header-level fields (PO Number, Vendor Name, Invoice Date, Totals) that **exactly matched** their PO counterparts.
+    *   Each dictionary: `field`, `invoice_value`, `po_value`, `notes` (e.g., "Matches PO data.").
+*   `verified_line_item_details`: List[Dict] (OPTIONAL - include if `status` is 'invalid' but some line items have *partially* matching details).
+    *   For an invoice line item matched to a PO line item: if some sub-fields (e.g., quantity, unit price) match, but another (e.g., HSN) is a discrepancy for *that same line item*, list the matching parts here.
+    *   Each dictionary: `invoice_line_description`, `matched_po_line_description`, `fields_matched` (list, e.g., ["Quantity", "Unit Price"]), `notes` (e.g., "Quantity and price match PO, but HSN code (see discrepancies) was incorrect.").
+*   `confidence`: Float (0.0 to 1.0) - Your confidence in the `status`.
 
 **Example of a Valid Response:**
 ```json
@@ -106,36 +112,63 @@ Respond ONLY with a valid JSON object containing the following keys:
 }}
 ```
 
-**Example of an Invalid Response:**
+**Example of an Invalid Response (Updated):**
 ```json
 {{
   "status": "invalid",
-  "summary": "Invoice total amount significantly differs from PO total, and one line item quantity mismatch found.",
+  "summary": "Invalid due to HSN code mismatch for 'Widget Type B' and Vendor Name incorrect. PO number and totals match. 'Widget Type A' quantity/price also match.",
   "discrepancies": [
+    {{
+      "field": "Vendor Name",
+      "invoice_value": "Wrong Vendor Inc.",
+      "po_value": "Supplier Corp",
+      "notes": "Vendor name on invoice (Wrong Vendor Inc.) does not match PO (Supplier Corp)."
+    }},
+    {{
+      "field": "HSN Code for 'Widget Type B'",
+      "invoice_value": "HSN-INV-002",
+      "po_value": "HSN-PO-001",
+      "notes": "HSN code on invoice (HSN-INV-002) for 'Widget Type B' does not match PO HSN (HSN-PO-001)."
+    }}
+    // IF quantity for Widget Type B was ALSO a mismatch, it would be a SEPARATE entry:
+    // {{
+    //   "field": "Line Item Quantity for 'Widget Type B'",
+    //   "invoice_value": 5,
+    //   "po_value": 10,
+    //   "notes": "Invoice quantity (5) for 'Widget Type B' does not match PO quantity (10)."
+    // }}
+  ],
+  "verified_header_fields": [
+    {{
+      "field": "Purchase Order Number",
+      "invoice_value": "PO12345",
+      "po_value": "PO12345",
+      "notes": "Matches PO data."
+    }},
     {{
       "field": "Total Amount",
       "invoice_value": 150.75,
-      "po_value": 120.75,
-      "notes": "Invoice total is $30 higher than PO total."
-    }},
-    {{
-      "field": "Line Item Quantity",
-      "invoice_value": 5,
-      "po_value": 4,
-      "notes": "Invoice quantity for 'Desk Lamp' is 5, but PO quantity was 4."
-    }},
-    {{
-      "field": "HSN Code",
-      "invoice_value": "OFF-PEN-B11",
-      "po_value": "OFF-PEN-B10",
-      "notes": "HSN code for 'IT Support Service' on invoice does not match PO item HSN."
+      "po_value": 150.75,
+      "notes": "Matches PO data."
     }}
   ],
-  "confidence": 0.95
+  "verified_line_item_details": [
+    {{
+      "invoice_line_description": "Widget Type A", // Assuming Widget Type A had no discrepancies
+      "matched_po_line_description": "Widget Type A",
+      "fields_matched": ["Quantity", "Unit Price", "Line Total", "HSN Code"],
+      "notes": "All details for this line item match PO."
+    }}
+    // Widget Type B would NOT be in verified_line_item_details if its HSN was a discrepancy, 
+    // because the goal of this section is to highlight items that have some matching parts DESPITE an issue on the SAME line.
+    // If Widget Type B quantity ALSO mismatched, it would be in discrepancies.
+    // If Widget Type B quantity MATCHED but HSN mismatched, then it *could* appear here with fields_matched: ["Quantity"], and notes clarifying HSN is in discrepancies.
+  ],
+  "confidence": 0.85
 }}
 ```
 
-Analyze the provided data and generate the validation JSON object.
+Analyze the provided data and generate the validation JSON object. **Double-check that any field listed in `discrepancies` truly represents a difference between invoice and PO values, and that your `notes` accurately reflect this difference.**
 """
 
 # --- LangGraph Node ---
