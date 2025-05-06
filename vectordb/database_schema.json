@@ -1,0 +1,547 @@
+{
+    "database_schema": {
+      "tables": [
+        {
+          "table_name": "vendors",
+          "description": "Stores information about suppliers.",
+          "columns": [
+            {
+              "column_name": "vendorid",
+              "data_type": "INT",
+              "constraints": ["PRIMARY KEY"],
+              "description": "Unique identifier for each vendor."
+            },
+            {
+              "column_name": "vendorname",
+              "data_type": "VARCHAR",
+              "constraints": ["NOT NULL"],
+              "description": "Name of the vendor."
+            },
+            {
+              "column_name": "contactperson",
+              "data_type": "VARCHAR",
+              "description": "Primary contact person at the vendor."
+            },
+            {
+              "column_name": "email",
+              "data_type": "VARCHAR",
+              "description": "Contact email address."
+            },
+            {
+              "column_name": "phonenumber",
+              "data_type": "VARCHAR",
+              "description": "Contact phone number."
+            },
+            {
+              "column_name": "addressline1",
+              "data_type": "VARCHAR",
+              "description": "Address details."
+            },
+            {
+              "column_name": "addressline2",
+              "data_type": "VARCHAR",
+              "description": "Address details."
+            },
+            {
+              "column_name": "city",
+              "data_type": "VARCHAR",
+              "description": "Address details."
+            },
+            {
+              "column_name": "state",
+              "data_type": "VARCHAR",
+              "description": "Address details."
+            },
+            {
+              "column_name": "postalcode",
+              "data_type": "VARCHAR",
+              "description": "Address details."
+            },
+            {
+              "column_name": "country",
+              "data_type": "VARCHAR",
+              "description": "Address details."
+            },
+            {
+              "column_name": "region",
+              "data_type": "VARCHAR",
+              "description": "Geographic or business region."
+            },
+            {
+              "column_name": "taxid",
+              "data_type": "VARCHAR",
+              "description": "Vendor's tax identification number."
+            },
+            {
+              "column_name": "defaultpaymentterms",
+              "data_type": "VARCHAR",
+              "description": "Standard payment terms (e.g., \"Net 30\")."
+            },
+            {
+              "column_name": "vendorrating",
+              "data_type": "DECIMAL",
+              "description": "A numerical rating for the vendor."
+            },
+            {
+              "column_name": "createdat",
+              "data_type": "TIMESTAMP",
+              "description": "Timestamps for record creation and last update."
+            },
+            {
+              "column_name": "updatedat",
+              "data_type": "TIMESTAMP",
+              "description": "Timestamps for record creation and last update."
+            }
+          ]
+        },
+        {
+          "table_name": "items",
+          "description": "Stores information about products or services offered/purchased.",
+          "columns": [
+            {
+              "column_name": "itemid",
+              "data_type": "INT",
+              "constraints": ["PRIMARY KEY"],
+              "description": "Unique identifier for each item."
+            },
+            {
+              "column_name": "hsn",
+              "data_type": "VARCHAR",
+              "constraints": ["UNIQUE"],
+              "description": " Harmonized System of Nomenclature or unique code for the item."
+            },
+            {
+              "column_name": "itemname",
+              "data_type": "VARCHAR",
+              "constraints": ["NOT NULL"],
+              "description": "Name of the item."
+            },
+            {
+              "column_name": "itemdescription",
+              "data_type": "TEXT",
+              "description": "Detailed description of the item."
+            },
+            {
+              "column_name": "category",
+              "data_type": "VARCHAR",
+              "description": "Category the item belongs to (e.g., \"Office Supplies\", \"Hardware\")."
+            },
+            {
+              "column_name": "unitofmeasure",
+              "data_type": "VARCHAR",
+              "description": "Unit used for quantity (e.g., \"Each\", \"Box\", \"KG\")."
+            },
+            {
+              "column_name": "standardunitprice",
+              "data_type": "DECIMAL",
+              "description": "Standard price per unit."
+            },
+            {
+              "column_name": "createdat",
+              "data_type": "TIMESTAMP",
+              "description": "Timestamps for record creation and last update."
+            },
+            {
+              "column_name": "updatedat",
+              "data_type": "TIMESTAMP",
+              "description": "Timestamps for record creation and last update."
+            }
+          ]
+        },
+        {
+          "table_name": "region",
+          "description": "Stores geographical or sales regions.",
+          "columns": [
+            {
+              "column_name": "regionid",
+              "data_type": "VARCHAR",
+              "constraints": ["PRIMARY KEY"],
+              "description": "Unique identifier for the region (e.g., \"R1\", \"R3\")."
+            },
+            {
+              "column_name": "regionname",
+              "data_type": "VARCHAR",
+              "constraints": ["NOT NULL"],
+              "description": "Name of the region (e.g., \"India-West\", \"North America\")."
+            }
+          ]
+        },
+        {
+          "table_name": "customer",
+          "description": "Stores information about customers.",
+          "columns": [
+            {
+              "column_name": "customerid",
+              "data_type": "VARCHAR",
+              "constraints": ["PRIMARY KEY"],
+              "description": "Unique identifier for the customer (e.g., \"CUST001\")."
+            },
+            {
+              "column_name": "customername",
+              "data_type": "VARCHAR",
+              "constraints": ["NOT NULL"],
+              "description": "Name of the customer."
+            },
+            {
+              "column_name": "customertype",
+              "data_type": "VARCHAR",
+              "description": "Type of customer (e.g., \"B2B\", \"Retail\")."
+            },
+            {
+              "column_name": "city",
+              "data_type": "VARCHAR",
+              "description": "Customer location details."
+            },
+            {
+              "column_name": "country",
+              "data_type": "VARCHAR",
+              "description": "Customer location details."
+            }
+          ]
+        },
+        {
+          "table_name": "purchase_orders",
+          "description": "Stores header information for purchase orders sent to vendors.",
+          "columns": [
+            {
+              "column_name": "po_id",
+              "data_type": "INT",
+              "constraints": ["PRIMARY KEY"],
+              "description": "Unique identifier for the purchase order."
+            },
+            {
+              "column_name": "ponumber",
+              "data_type": "VARCHAR",
+              "constraints": ["UNIQUE"],
+              "description": "Human-readable purchase order number (e.g., \"PO-2024-09001\")."
+            },
+            {
+              "column_name": "vendorid",
+              "data_type": "INT",
+              "constraints": ["FOREIGN KEY -> vendors.vendorid"],
+              "description": "Links to the vendor the PO was sent to."
+            },
+            {
+              "column_name": "orderdate",
+              "data_type": "DATE",
+              "description": "Date the order was placed."
+            },
+            {
+              "column_name": "expecteddeliverydate",
+              "data_type": "DATE",
+              "description": "Expected delivery date for the order."
+            },
+            {
+              "column_name": "shippingaddressline1",
+              "data_type": "VARCHAR",
+              "description": "Delivery address details."
+            },
+            {
+              "column_name": "shippingaddressline2",
+              "data_type": "VARCHAR",
+              "description": "Delivery address details."
+            },
+            {
+              "column_name": "shippingcity",
+              "data_type": "VARCHAR",
+              "description": "Delivery address details."
+            },
+            {
+              "column_name": "shippingstate",
+              "data_type": "VARCHAR",
+              "description": "Delivery address details."
+            },
+            {
+              "column_name": "shippingpostalcode",
+              "data_type": "VARCHAR",
+              "description": "Delivery address details."
+            },
+            {
+              "column_name": "shippingcountry",
+              "data_type": "VARCHAR",
+              "description": "Delivery address details."
+            },
+            {
+              "column_name": "paymentterms",
+              "data_type": "VARCHAR",
+              "description": "Payment terms specific to this PO."
+            },
+            {
+              "column_name": "subtotalamount",
+              "data_type": "DECIMAL",
+              "description": "Subtotal amount before taxes and shipping."
+            },
+            {
+              "column_name": "taxamount",
+              "data_type": "DECIMAL",
+              "description": "Tax amount applied to the order."
+            },
+            {
+              "column_name": "shippingcost",
+              "data_type": "DECIMAL",
+              "description": "Cost of shipping/delivery."
+            },
+            {
+              "column_name": "totalamount",
+              "data_type": "DECIMAL",
+              "description": "Total cost of the order."
+            },
+            {
+              "column_name": "currency",
+              "data_type": "VARCHAR",
+              "description": "Currency used (e.g., \"INR\", \"USD\")."
+            },
+            {
+              "column_name": "status",
+              "data_type": "VARCHAR",
+              "description": "Current status of the PO (e.g., \"Sent\", \"Fully Received\")."
+            },
+            {
+              "column_name": "buyercontactperson",
+              "data_type": "VARCHAR",
+              "description": "Person who placed the order."
+            },
+            {
+              "column_name": "notes",
+              "data_type": "TEXT",
+              "description": "Additional notes about the PO."
+            },
+            {
+              "column_name": "createdAt",
+              "data_type": "TIMESTAMP",
+              "description": "Timestamps for record creation and last update."
+            },
+            {
+              "column_name": "updatedat",
+              "data_type": "TIMESTAMP",
+              "description": "Timestamps for record creation and last update."
+            }
+          ]
+        },
+        {
+          "table_name": "purchase_order_line_items",
+          "description": "Stores details about individual items within each purchase order.",
+          "columns": [
+            {
+              "column_name": "polineid",
+              "data_type": "INT",
+              "constraints": ["PRIMARY KEY"],
+              "description": "Unique identifier for each line item within a PO."
+            },
+            {
+              "column_name": "po_id",
+              "data_type": "INT",
+              "constraints": ["NOT NULL", "FOREIGN KEY -> purchase_orders.po_id"],
+              "description": "Links to the parent purchase order."
+            },
+            {
+              "column_name": "linenumber",
+              "data_type": "INT",
+              "description": "Sequential number for the line item within the PO."
+            },
+            {
+              "column_name": "itemid",
+              "data_type": "INT",
+              "constraints": ["FOREIGN KEY -> items.itemid"],
+              "description": "Links to the specific item ordered."
+            },
+            {
+              "column_name": "itemdescription",
+              "data_type": "TEXT",
+              "description": "Description of the item (potentially copied from Items or specific to the PO)."
+            },
+            {
+              "column_name": "quantityordered",
+              "data_type": "INT",
+              "description": "Quantity of the item ordered."
+            },
+            {
+              "column_name": "unitofmeasure",
+              "data_type": "VARCHAR",
+              "description": "Unit for the quantity."
+            },
+            {
+              "column_name": "unitprice",
+              "data_type": "DECIMAL",
+              "description": "Price per unit for this specific order line."
+            },
+            {
+              "column_name": "linetotal",
+              "data_type": "DECIMAL",
+              "description": "Total cost for this line item (quantityordered * UnitPrice)."
+            },
+            {
+              "column_name": "lineexpecteddeliverydate",
+              "data_type": "DATE",
+              "description": "Expected delivery date specific to the line item."
+            },
+            {
+              "column_name": "actualdeliveryDate",
+              "data_type": "DATE",
+              "description": "Actual delivery date of the line item."
+            },
+            {
+              "column_name": "quantityreceived",
+              "data_type": "INT",
+              "description": "Quantity actually received for this line item."
+            },
+            {
+              "column_name": "linestatus",
+              "data_type": "VARCHAR",
+              "description": "Status of the individual line item (e.g., \"Ordered\", \"Partially Received\")."
+            },
+            {
+              "column_name": "createdat",
+              "data_type": "TIMESTAMP",
+              "description": "Timestamps for record creation and last update."
+            },
+            {
+              "column_name": "updatedat",
+              "data_type": "TIMESTAMP",
+              "description": "Timestamps for record creation and last update."
+            }
+          ]
+        },
+        {
+          "table_name": "sales_transaction",
+          "description": "Stores details about individual sales transactions made to customers.",
+          "columns": [
+            {
+              "column_name": "transaction_id",
+              "data_type": "INT",
+              "constraints": ["PRIMARY KEY"],
+              "description": "Unique identifier for the sales transaction."
+            },
+            {
+              "column_name": "transaction_date",
+              "data_type": "DATE",
+              "description": "Date the sale occurred."
+            },
+            {
+              "column_name": "product_id",
+              "data_type": "INT",
+              "constraints": ["FOREIGN KEY -> items.itemid"],
+              "description": "Links to the item that was sold."
+            },
+            {
+              "column_name": "vendor_id",
+              "data_type": "INT",
+              "constraints": ["FOREIGN KEY -> vendors.vendorid"],
+              "description": "Links to the original vendor of the product."
+            },
+            {
+              "column_name": "purchase_order_id",
+              "data_type": "INT",
+              "constraints": ["FOREIGN KEY -> purchase_orders.po_id"],
+              "description": "Links to the PO used to acquire the item."
+            },
+            {
+              "column_name": "invoice_id",
+              "data_type": "VARCHAR",
+              "description": "Identifier for the sales invoice."
+            },
+            {
+              "column_name": "quantity_sold",
+              "data_type": "INT",
+              "description": "Quantity of the item sold in this transaction."
+            },
+            {
+              "column_name": "sale_price",
+              "data_type": "DECIMAL",
+              "description": "Price per unit at which the item was sold."
+            },
+            {
+              "column_name": "total_sale_amount",
+              "data_type": "DECIMAL",
+              "description": "Total amount for this transaction line."
+            },
+            {
+              "column_name": "customer_id",
+              "data_type": "VARCHAR",
+              "constraints": ["FOREIGN KEY -> customer.customerid"],
+              "description": "Links to the customer who bought the item."
+            },
+            {
+              "column_name": "region_id",
+              "data_type": "VARCHAR",
+              "constraints": ["FOREIGN KEY -> region.regionid"],
+              "description": "Links to the sales region."
+            },
+            {
+              "column_name": "customer_type",
+              "data_type": "VARCHAR",
+              "description": "Type of customer (potentially redundant if linked via Customer_ID)."
+            },
+            {
+              "column_name": "year",
+              "data_type": "INT",
+              "description": "Extracted year from the transaction date for reporting."
+            },
+            {
+              "column_name": "month",
+              "data_type": "INT",
+              "description": "Extracted month from the transaction date for reporting."
+            }
+          ]
+        }
+      ],
+      "relationships": [
+        {
+          "from_table": "purchase_orders",
+          "from_column": "vendorid",
+          "to_table": "vendors",
+          "to_column": "vendorid",
+          "description": "Each vendor can have multiple purchase orders, but each purchase order links to one vendor."
+        },
+        {
+          "from_table": "purchase_order_line_items",
+          "from_column": "itemid",
+          "to_table": "items",
+          "to_column": "itemid",
+          "description": "Each line item in a purchase order links to one specific item."
+        },
+        {
+          "from_table": "purchase_order_line_items",
+          "from_column": "po_id",
+          "to_table": "purchase_orders",
+          "to_column": "po_id",
+          "description": "Each line item belongs to exactly one purchase order."
+        },
+        {
+          "from_table": "sales_transaction",
+          "from_column": "customer_id",
+          "to_table": "customer",
+          "to_column": "customerid",
+          "description": "Each sales transaction is linked to one customer."
+        },
+        {
+          "from_table": "sales_transaction",
+          "from_column": "region_id",
+          "to_table": "region",
+          "to_column": "regionid",
+          "description": "Each sales transaction belongs to one geographic region."
+        },
+        {
+          "from_table": "sales_transaction",
+          "from_column": "product_id",
+          "to_table": "items",
+          "to_column": "itemid",
+          "description": "Each sales transaction line involves one specific product."
+        },
+        {
+          "from_table": "sales_transaction",
+          "from_column": "vendor_id",
+          "to_table": "vendors",
+          "to_column": "vendorid",
+          "description": "Sales transactions link back to the original vendor of the item."
+        },
+        {
+          "from_table": "sales_transaction",
+          "from_column": "purchase_order_id",
+          "to_table": "purchase_orders",
+          "to_column": "po_id",
+          "description": "Sales transactions can link back to the purchase order used to acquire the item."
+        }
+      ]
+    }
+  }

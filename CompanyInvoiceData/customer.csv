@@ -1,0 +1,9 @@
+Customer_ID,CustomerName,CustomerType,City,Country
+CUST001,"Reliable Industries","B2B","Mumbai","India"
+CUST002,"Tech Innovators Ltd.","B2B","Bengaluru","India"
+CUST003,"Retail Outlet Pune","Retail","Pune","India"
+CUST004,"Apex Solutions GmbH","B2B","Frankfurt","Germany"
+CUST005,"Downtown Electronics","Retail","New York","USA"
+CUST006,"Online Shopper A","Individual","Online","N/A"
+CUST007,"Sunrise Wholesalers","Wholesale","Singapore","Singapore"
+CUST008,"Pro Builders Co.","B2B","Austin","USA"

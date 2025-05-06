@@ -1,0 +1,370 @@
+[
+    {
+      "Invoice": "INV-2024-001",
+      "Line Item": 1,
+      "Quantity": 10,
+      "Description": "A4 Printer Paper (Ream, 500 Sheets)",
+      "Unit Price": 672.00,
+      "Total": 6720.00
+    },
+    {
+      "Invoice": "INV-2024-001",
+      "Line Item": 2,
+      "Quantity": 5,
+      "Description": "Desk Stapler - Standard",
+      "Unit Price": 1258.00,
+      "Total": 6290.00
+    },
+    {
+      "Invoice": "INV-2024-002",
+      "Line Item": 1,
+      "Quantity": 300,
+      "Description": "Resistor 1k Ohm 1/4W (Pack 100)",
+      "Unit Price": 4.95,
+      "Total": 1485.00
+    },
+    {
+      "Invoice": "INV-2024-002",
+      "Line Item": 2,
+      "Quantity": 25,
+      "Description": "Capacitor 10uF 50V (Pack 50)",
+      "Unit Price": 6.60,
+      "Total": 165.00
+    },
+    {
+      "Invoice": "INV-2024-003",
+      "Line Item": 1,
+      "Quantity": 10,
+      "Description": "USB Keyboard - Standard 101 Key",
+      "Unit Price": 2075.00,
+      "Total": 20750.00
+    },
+    {
+      "Invoice": "INV-2024-003",
+      "Line Item": 2,
+      "Quantity": 10,
+      "Description": "Optical USB Mouse",
+      "Unit Price": 1245.00,
+      "Total": 12450.00
+    },
+    {
+      "Invoice": "INV-2024-003",
+      "Line Item": 3,
+      "Quantity": 5,
+      "Description": "Full HD Webcam",
+      "Unit Price": 4250.00,
+      "Total": 21250.00
+    },
+    {
+      "Invoice": "INV-2024-004",
+      "Line Item": 1,
+      "Quantity": 10,
+      "Description": "Graphic Design Services",
+      "Unit Price": 85.00,
+      "Total": 850.00
+    },
+    {
+      "Invoice": "INV-2025-005",
+      "Line Item": 1,
+      "Quantity": 10,
+      "Description": "Aluminum Coil (10 KG)",
+      "Unit Price": 5.2910,
+      "Total": 52.91
+    },
+    {
+      "Invoice": "INV-2025-005",
+      "Line Item": 2,
+      "Quantity": 1,
+      "Description": "ABS Plastic Pellets (25 KG Bag)",
+      "Unit Price": 86.8500,
+      "Total": 86.85
+    },
+    {
+      "Invoice": "INV-2025-006",
+      "Line Item": 1,
+      "Quantity": 5,
+      "Description": "Business Laptop 14-inch",
+      "Unit Price": 70550.00,
+      "Total": 352750.00
+    },
+    {
+      "Invoice": "INV-2025-006",
+      "Line Item": 2,
+      "Quantity": 5,
+      "Description": "24-inch FHD Monitor",
+      "Unit Price": 14960.00,
+      "Total": 74800.00
+    },
+    {
+      "Invoice": "INV-2025-006",
+      "Line Item": 3,
+      "Quantity": 5,
+      "Description": "USB 3.0 Docking Station",
+      "Unit Price": 10705.00,
+      "Total": 53525.00
+    },
+    {
+      "Invoice": "INV-2025-006",
+      "Line Item": 4,
+      "Quantity": 5,
+      "Description": "USB Keyboard - Standard 101 Key",
+      "Unit Price": 2075.00,
+      "Total": 10375.00
+    },
+    {
+      "Invoice": "INV-2025-006",
+      "Line Item": 5,
+      "Quantity": 5,
+      "Description": "Optical USB Mouse",
+      "Unit Price": 1245.00,
+      "Total": 6225.00
+    },
+    {
+      "Invoice": "INV-2025-006",
+      "Line Item": 6,
+      "Quantity": 5,
+      "Description": "Full HD Webcam",
+      "Unit Price": 4250.00,
+      "Total": 21250.00
+    },
+    {
+      "Invoice": "INV-2025-006",
+      "Line Item": 7,
+      "Quantity": 5,
+      "Description": "Windows Pro License",
+      "Unit Price": 16517.00,
+      "Total": 82585.00
+    },
+    {
+      "Invoice": "INV-2025-006",
+      "Line Item": 8,
+      "Quantity": 5,
+      "Description": "Office 365 Business Standard License",
+      "Unit Price": 12450.00,
+      "Total": 62250.00
+    },
+    {
+      "Invoice": "INV-2025-007",
+      "Line Item": 1,
+      "Quantity": 20,
+      "Description": "Blue Ballpoint Pen (Box of 10)",
+      "Unit Price": 478.50,
+      "Total": 9570.00
+    },
+    {
+      "Invoice": "INV-2025-007",
+      "Line Item": 2,
+      "Quantity": 15,
+      "Description": "A5 Spiral Notebook (Pack of 5)",
+      "Unit Price": 807.00,
+      "Total": 12105.00
+    },
+    {
+      "Invoice": "INV-2024-008",
+      "Line Item": 1,
+      "Quantity": 2,
+      "Description": "Graphic Design Services",
+      "Unit Price": 85.00,
+      "Total": 170.00
+    },
+    {
+      "Invoice": "INV-2024-009",
+      "Line Item": 1,
+      "Quantity": 500,
+      "Description": "ARM Cortex M0 Microcontroller",
+      "Unit Price": 2.18,
+      "Total": 1090.00
+    },
+    {
+      "Invoice": "INV-2024-009",
+      "Line Item": 2,
+      "Quantity": 1,
+      "Description": "Resistor 1k Ohm 1/4W (Pack 100)",
+      "Unit Price": 8.33,
+      "Total": 8.33
+    },
+    {
+      "Invoice": "INV-2024-010",
+      "Line Item": 1,
+      "Quantity": 1,
+      "Description": "ARM Cortex M0 Microcontroller",
+      "Unit Price": 2.08,
+      "Total": 2.08
+    },
+    {
+      "Invoice": "INV-2024-011",
+      "Line Item": 1,
+      "Quantity": 10,
+      "Description": "Steel Sheet (1m x 2m, 2mm thick)",
+      "Unit Price": 90.25,
+      "Total": 902.50
+    },
+    {
+      "Invoice": "INV-2024-012",
+      "Line Item": 1,
+      "Quantity": 10,
+      "Description": "ABS Plastic Pellets (25 KG Bag)",
+      "Unit Price": 720.00,
+      "Total": 7200.00
+    },
+    {
+      "Invoice": "INV-2024-ERR-001",
+      "Line Item": 1,
+      "Quantity": 12,
+      "Description": "A4 Printer Paper (Ream, 500 Sheets)",
+      "Unit Price": 672.00,
+      "Total": 8064.00
+    },
+    {
+      "Invoice": "INV-2024-ERR-001",
+      "Line Item": 2,
+      "Quantity": 6,
+      "Description": "Desk Stapler - Standard",
+      "Unit Price": 1258.00,
+      "Total": 7548.00
+    },
+    {
+      "Invoice": "INV-2024-ERR-002",
+      "Line Item": 1,
+      "Quantity": 300,
+      "Description": "Resistor 1k Ohm 1/4W (Pack 100)",
+      "Unit Price": 5.50,
+      "Total": 1650.00
+    },
+    {
+      "Invoice": "INV-2024-ERR-002",
+      "Line Item": 2,
+      "Quantity": 25,
+      "Description": "Capacitor 10uF 50V (Pack 50)",
+      "Unit Price": 7.00,
+      "Total": 175.00
+    },
+    {
+      "Invoice": "INV-2024-ERR-003",
+      "Line Item": 1,
+      "Quantity": 2,
+      "Description": "Steel Sheet (1m x 2m, 2mm thick)",
+      "Unit Price": 90.25,
+      "Total": 180.50
+    },
+    {
+      "Invoice": "INV-2024-ERR-004",
+      "Line Item": 1,
+      "Quantity": 50,
+      "Description": "Resistor 1k Ohm 1/4W (Pack 100)",
+      "Unit Price": 9.00,
+      "Total": 450.00
+    },
+    {
+      "Invoice": "INV-2024-ERR-005",
+      "Line Item": 1,
+      "Quantity": 1,
+      "Description": "Business Laptop 14-inch",
+      "Unit Price": 825.00,
+      "Total": 825.00
+    },
+    {
+      "Invoice": "INV-2024-ERR-005",
+      "Line Item": 2,
+      "Quantity": 1,
+      "Description": "USB 3.0 Docking Station",
+      "Unit Price": 135.00,
+      "Total": 135.00
+    },
+    {
+      "Invoice": "INV-2024-ERR-005",
+      "Line Item": 3,
+      "Quantity": 1,
+      "Description": "Windows Pro License",
+      "Unit Price": 195.00,
+      "Total": 195.00
+    },
+    {
+      "Invoice": "INV-2024-ERR-005",
+      "Line Item": 4,
+      "Quantity": 1,
+      "Description": "Office 365 Business Standard License",
+      "Unit Price": 90.00,
+      "Total": 90.00
+    },
+    {
+      "Invoice": "INV-2024-ERR-006",
+      "Line Item": 1,
+      "Quantity": 1,
+      "Description": "IT Consulting Services",
+      "Unit Price": 9960.00,
+      "Total": 9960.00
+    },
+    {
+      "Invoice": "INV-2024-ERR-007",
+      "Line Item": 1,
+      "Quantity": 12,
+      "Description": "A4 Printer Paper (Ream, 500 Sheets)",
+      "Unit Price": 700.00,
+      "Total": 8400.00
+    },
+    {
+      "Invoice": "INV-2024-ERR-007",
+      "Line Item": 2,
+      "Quantity": 4,
+      "Description": "Desk Stapler - Standard",
+      "Unit Price": 1300.00,
+      "Total": 5200.00
+    },
+    {
+      "Invoice": "INV-2025-ERR-008",
+      "Line Item": 1,
+      "Quantity": 5,
+      "Description": "Endpoint Antivirus Security",
+      "Unit Price": 41.00,
+      "Total": 205.00
+    },
+    {
+      "Invoice": "INV-2025-ERR-008",
+      "Line Item": 2,
+      "Quantity": 3,
+      "Description": "Optical USB Mouse",
+      "Unit Price": 14.00,
+      "Total": 42.00
+    },
+    {
+      "Invoice": "INV-2024-ERR-009",
+      "Line Item": 1,
+      "Quantity": 2,
+      "Description": "ARM Cortex M0 Microcontroller",
+      "Unit Price": 2.08,
+      "Total": 4.16
+    },
+    {
+      "Invoice": "INV-2024-ERR-010",
+      "Line Item": 1,
+      "Quantity": 500,
+      "Description": "ARM Cortex M0 Microcontroller",
+      "Unit Price": 2.30,
+      "Total": 1150.00
+    },
+    {
+      "Invoice": "INV-2024-ERR-010",
+      "Line Item": 2,
+      "Quantity": 1,
+      "Description": "Resistor 1k Ohm 1/4W (Pack 100)",
+      "Unit Price": 9.00,
+      "Total": 9.00
+    },
+    {
+      "Invoice": "INV-2025-ERR-011",
+      "Line Item": 1,
+      "Quantity": 200,
+      "Description": "ARM Cortex M0 Microcontroller",
+      "Unit Price": 2.50,
+      "Total": 500.00
+    },
+    {
+      "Invoice": "INV-2025-ERR-012",
+      "Line Item": 1,
+      "Quantity": 3,
+      "Description": "Business Laptop 14-inch",
+      "Unit Price": 900.00,
+      "Total": 2700.00
+    }
+  ]
