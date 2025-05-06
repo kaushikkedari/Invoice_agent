@@ -7,6 +7,8 @@ import plotly.graph_objects as go
 import json
 from PIL import Image
 from typing import Dict, Any, List, Optional, Union
+import traceback # Added for detailed error logging
+import datetime # Added for filenames
 
 # Import our workflow
 from invoice_workflow import process_input
@@ -61,6 +63,7 @@ def display_query_results(result: Dict[str, Any]):
     
     # Tab 3: Table
     with table_tab:
+        df_to_download = None # Initialize df for download button
         # Check for and display table_data (from visualize_data_node)
         if result.get("table_data"):
             try:
@@ -68,6 +71,7 @@ def display_query_results(result: Dict[str, Any]):
                 if isinstance(table_data, list) and table_data:
                     df = pd.DataFrame(table_data)
                     st.dataframe(df)
+                    df_to_download = df # Assign for download
                 elif isinstance(table_data, list) and not table_data:
                     st.info("The query returned an empty table_data list.")
                 else:
@@ -81,10 +85,14 @@ def display_query_results(result: Dict[str, Any]):
         elif result.get("result_dataframe") is not None:
             try:
                 df = result["result_dataframe"]
-                if not df.empty:
+                if isinstance(df, pd.DataFrame) and not df.empty: # Ensure it's a non-empty DataFrame
                     st.dataframe(df)
+                    df_to_download = df # Assign for download
+                elif isinstance(df, pd.DataFrame) and df.empty:
+                    st.info("The result DataFrame is empty.")
                 else:
-                    st.info("The dataframe is empty.")
+                     st.warning(f"result_dataframe is not a DataFrame. Type: {type(df)}")
+                     st.write(df) # Show the raw data
             except Exception as e:
                 st.error(f"Error displaying result_dataframe: {e}")
         # Display raw query result if it's just text and no dataframe/table was shown
@@ -92,7 +100,20 @@ def display_query_results(result: Dict[str, Any]):
             st.text(result["query_result"])
         else:
             st.info("No table data available for this query.")
-    
+            
+        # --- KEPT: Download Button for Table Data ---
+        if df_to_download is not None:
+            try:
+                csv_data = df_to_download.to_csv(index=False).encode('utf-8')
+                st.download_button(
+                    label="Download Table Data (CSV) 💾",
+                    data=csv_data,
+                    file_name=f"query_results_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.csv",
+                    mime="text/csv",
+                )
+            except Exception as e:
+                 st.warning(f"Could not prepare table data for download: {e}")
+            
     # Tab 4: SQL Query
     with sql_tab:
         if result.get("query_code"):
@@ -104,151 +125,97 @@ def display_query_results(result: Dict[str, Any]):
     if result.get("error"):
         st.error(f"Workflow Error: {result['error']}")
 
-def display_invoice_results(result: Dict[str, Any]):
-    """Display the results from the invoice workflow branch."""
+# --- MODIFIED ---
+def display_single_invoice_result(result: Dict[str, Any], original_filename: str):
+    """Displays the results for a single processed invoice, focusing on status and discrepancies."""
     
-    # Display PO data
-    if result.get("po_data"):
-        st.subheader("Purchase Order Data")
-        try:
-            # Convert list of dictionaries to DataFrame for better display
-            po_df = pd.DataFrame(result["po_data"])
-            st.dataframe(po_df)
-        except Exception as e:
-            st.error(f"Error displaying PO data: {e}")
-            st.json(result["po_data"])
-    
-    # Display validation results
-    if result.get("validation_result"):
-        st.subheader("Validation Result")
-        
-        validation_details = result["validation_result"] # Contains status, summary, discrepancies etc.
-        status = result.get("validation_status") or validation_details.get("status", "unknown") # Get status reliably
-        
-        # Get discrepancies if available
-        discrepancies = validation_details.get("discrepancies", [])
-        
-        # Prepare matched and mismatched field lists
-        matched_fields = []
-        mismatched_fields = []
-        invoice_data = result.get("extracted_invoice_data", {})
-        
-        if invoice_data:
-            if discrepancies:
-                discrepancy_fields_lower = [d.get('field', '').lower() for d in discrepancies]
-                
-                # Populate mismatched fields from discrepancies
-                for item in discrepancies:
-                    mismatched_fields.append({
-                        'field': item.get('field', 'Unknown Field'),
-                        'invoice_value': item.get('invoice_value', 'N/A'),
-                        'po_value': item.get('po_value', 'N/A'),
-                        'reason': item.get('notes', 'Mismatch')
-                    })
-                
-                # Populate matched fields (fields in invoice but not in discrepancies)
-                if result.get("po_data"):
-                    po_data = result.get("po_data", [{}])[0] # Assuming single PO match for simplicity
-                    for key, inv_value in invoice_data.items():
-                        if key != "line_items" and key.lower() not in discrepancy_fields_lower:
-                            po_value = "N/A"
-                            if key in po_data:
-                                po_value = po_data[key]
-                            elif key.replace("_", "") in po_data:
-                                po_value = po_data[key.replace("_", "")]
-                            matched_fields.append({
-                                'field': key,
-                                'invoice_value': inv_value,
-                                'po_value': po_value,
-                                'reason': 'Match'
-                            })
-            # If no discrepancies explicitly listed, populate based on status
-            elif status == "invalid":
-                 for key, value in invoice_data.items():
-                     if key != "line_items":
-                         mismatched_fields.append({
-                            'field': key,
-                            'invoice_value': value,
-                            'po_value': 'Not found in PO',
-                            'reason': validation_details.get("reason", "PO data not available")
-                        })
-            elif status == "valid":
-                 if result.get("po_data"):
-                     po_data = result.get("po_data", [{}])[0]
-                     for key, inv_value in invoice_data.items():
-                        if key != "line_items":
-                            po_value = "N/A"
-                            if key in po_data:
-                                po_value = po_data[key]
-                            elif key.replace("_", "") in po_data:
-                                po_value = po_data[key.replace("_", "")]
-                            matched_fields.append({
-                                'field': key,
-                                'invoice_value': inv_value,
-                                'po_value': po_value,
-                                'reason': 'Match'
-                            })
-                 else:
-                      for key, value in invoice_data.items():
-                         if key != "line_items":
-                            matched_fields.append({
-                                'field': key,
-                                'invoice_value': value,
-                                'po_value': 'N/A',
-                                'reason': 'Assumed Match (no PO data)'
-                            })
+    validation_details = result.get("validation_result")
+    status = result.get("validation_status") or (validation_details.get("status") if validation_details else "unknown")
+    summary = validation_details.get("summary", "") if validation_details else ""
+    discrepancies = validation_details.get("discrepancies", []) if validation_details else []
 
-        # --- Display Logic --- 
+    # --- Display Status First ---
+    if status == "valid":
+        st.success("✅ Status: VALID")
+        # --- REMOVED Summary and Generic Message ---
+        # if summary:
+        #     st.caption(f"Summary: {summary}")
+        # st.info("Key fields (Vendor, PO Number, Totals, Line Items) were compared and matched.")
         
-        if status == "valid":
-            st.success("Status: VALID")
-            if validation_details.get("summary"):
-                st.caption(f"Summary: {validation_details['summary']}")
-            
-            # --- VALID INVOICE: Show ONLY List of Matched Field Names --- 
-            if matched_fields:
-                st.subheader("Validated Fields")
-                # Iterate and display each matched field name with a checkmark
-                for item in matched_fields:
-                    st.markdown(f"✅ {item['field']}")
-            else:
-                st.info("No matched fields found to display.")
-                
-        elif status == "invalid":
-            reason = validation_details.get("reason")
-            summary = validation_details.get("summary", "No summary provided.")
-            
-            # Construct a concise reason
-            if reason:
-                 display_reason = reason
-            elif discrepancies:
-                 display_reason = ", ".join([d.get('field', 'Unknown Field') for d in discrepancies[:2]]) + ("..." if len(discrepancies) > 2 else "")
-            else:
-                 display_reason = "Validation Failed"
-                 
-            st.error(f"Status: INVALID - {display_reason}")
+        # --- ADDED: Display list of key validated fields ---
+        st.markdown("**Validated Fields:**")
+        key_validated_fields = [
+            "Vendor Name",
+            "PO Number",
+            "Invoice Date",
+            "Total Amount",
+            "Line Item Quantities",
+            "Line Item Prices",
+            "HSN Codes (where applicable)"
+        ]
+        for field in key_validated_fields:
+            st.markdown(f"- ✅ {field}")
+        
+    elif status == "invalid":
+        reason = validation_details.get("reason", "") if validation_details else ""
+        # Construct a concise reason if not explicitly provided
+        if not reason and discrepancies:
+            reason = ", ".join(list(set([d.get('field', 'Unknown Field') for d in discrepancies])))
+        elif not reason:
+             reason = "Validation Failed (Unknown Reason)"
+             
+        st.error(f"❌ Status: INVALID - {reason}")
+        if summary:
             st.write(f"**Summary:** {summary}")
-            
-            # --- INVALID INVOICE: Show ONLY List of Mismatched Field Details --- 
-            if mismatched_fields:
-                st.subheader("Discrepancies")
-                # Iterate and display each mismatched field comparison
-                for item in mismatched_fields:
-                    st.markdown(f"**{item['field']} Invoice:** {item['invoice_value']}")
-                    st.markdown(f"**{item['field']} PO:** {item['po_value']}")
-                    st.markdown(f"**Reason:** {item['reason']}")
-                    st.markdown("---") # Add a separator
-            else:
-                st.info("No specific discrepancies identified, but the overall status is invalid.")
         
-        else: # Fallback for unknown status
-            st.info(f"Status: {str(status).upper()}")
-            # Display the raw JSON as a fallback
-            st.json(validation_details) 
-            
-    # Display errors if any
-    if result.get("error"):
-        st.error(f"Error: {result['error']}")
+        # Show specific discrepancies if available
+        if discrepancies:
+            st.subheader("Discrepancies Found:")
+            for item in discrepancies:
+                field = item.get('field', 'Unknown Field')
+                inv_val = item.get('invoice_value', 'N/A')
+                po_val = item.get('po_value', 'N/A')
+                notes = item.get('notes', 'No details')
+                
+                col1, col2, col3 = st.columns([2,3,3]) # Adjust column ratios as needed
+                with col1:
+                    # Add red cross next to the field name
+                    st.markdown(f"**Field:** {field} ") 
+                with col2:
+                    st.markdown(f"**Invoice:** `{str(inv_val)} ❌`")
+                with col3:
+                     st.markdown(f"**PO:** `{str(po_val)} `")
+                if notes:
+                    st.caption(f"Note: {notes}")
+                st.markdown("---") # Separator
+        else:
+            st.info("No specific discrepancy details were provided in the validation result, although the status is invalid.")
+
+    elif status == "needs_review": # Handle the review status
+         st.warning("⚠️ Status: NEEDS REVIEW")
+         if summary:
+             st.write(f"**Summary:** {summary}")
+         if validation_details and validation_details.get("details"):
+              st.caption(f"Details: {validation_details['details']}")
+         # Optionally show raw response if available in 'details' or other field (Removed as per request)
+         # if validation_details.get("raw_response"):
+         #      with st.expander("Raw LLM Response Fragment (for Debugging)"):
+         #           st.code(validation_details["raw_response"])
+
+    elif result.get("error"):
+        # Handle cases where validation didn't run due to prior error
+        st.error(f"🛑 Error: {result['error']}")
+        st.info("Processing stopped before validation could be completed.")
+        # REMOVED partial data display and download button
+
+    else: # Fallback for other unknown statuses or missing validation results
+        st.info(f"Status: {str(status).upper()}")
+        st.write("Validation did not produce a standard result.")
+        # REMOVED JSON display
+
+    # --- REMOVED PO Data Display ---
+    # --- REMOVED Extracted Data Display and Download Button ---
+    # --- REMOVED Validation Result Download Button ---
 
 # --- Main App ---
 def main():
@@ -284,7 +251,6 @@ def main():
                         display_query_results(result)
                     except Exception as e:
                          st.error(f"An error occurred during workflow execution: {e}")
-                         import traceback
                          st.text(traceback.format_exc()) # Show traceback for debugging
             else:
                 st.warning("Please enter a query.")
@@ -292,39 +258,82 @@ def main():
     # Invoice Validation Tab
     with invoice_tab:
         st.header("Invoice Validation")
-        st.write("Upload an invoice image or PDF to extract and validate against purchase order data.")
+        st.write("Upload one or more invoice images or PDFs to extract and validate against purchase order data.")
         
-        # File uploader
-        uploaded_file = st.file_uploader("Upload Invoice (PDF, JPG, PNG)", 
-                                       type=["pdf", "jpg", "jpeg", "png"])
+        # --- MODIFIED: File uploader for multiple files ---
+        uploaded_files = st.file_uploader("Upload Invoices (PDF, JPG, PNG)", 
+                                       type=["pdf", "jpg", "jpeg", "png"],
+                                       accept_multiple_files=True) # Allow multiple files
         
-        if uploaded_file is not None:
-            # Display the uploaded file
-            if uploaded_file.type.startswith('image/'):
-                st.image(Image.open(uploaded_file), caption="Uploaded Invoice", use_container_width=True)
-            elif uploaded_file.type == 'application/pdf':
-                st.write("PDF uploaded successfully")
-            
-            # Process button
-            if st.button("Process Invoice", key="process_invoice"):
-                with st.spinner("Processing invoice..."):
-                    # Save the uploaded file to a temporary location
-                    with tempfile.NamedTemporaryFile(delete=False, suffix=os.path.splitext(uploaded_file.name)[1]) as tmp_file:
-                        tmp_file.write(uploaded_file.getvalue())
-                        file_path = tmp_file.name
-                    
-                    try:
-                        # Call the workflow with the file path
-                        result = process_input(file_path, "image")
-                        
-                        # Display results
-                        display_invoice_results(result)
-                    except Exception as e:
-                        st.error(f"Error processing invoice: {e}")
-                    finally:
-                        # Clean up the temporary file
-                        if os.path.exists(file_path):
-                            os.unlink(file_path)
+        # Initialize session state to store results
+        if 'invoice_results' not in st.session_state:
+            st.session_state.invoice_results = {}
+
+        if uploaded_files:
+             st.write(f"Ready to process {len(uploaded_files)} file(s).")
+             # Process button
+             if st.button("Process Invoices", key="process_invoices"):
+                 
+                 # Clear previous results before processing new batch
+                 st.session_state.invoice_results = {} 
+                 
+                 progress_bar = st.progress(0, text="Initializing...")
+                 total_files = len(uploaded_files)
+                 results_dict = {} # Store results here {filename: result_dict}
+                 
+                 with st.spinner(f"Processing {total_files} invoices sequentially..."):
+                     for i, uploaded_file in enumerate(uploaded_files):
+                         file_path = None # Ensure file_path is reset
+                         current_file_name = uploaded_file.name
+                         progress_text = f"Processing file {i+1}/{total_files}: {current_file_name}"
+                         progress_bar.progress((i) / total_files, text=progress_text) # Update progress before processing
+                         
+                         try:
+                             # Save the uploaded file to a temporary location
+                             with tempfile.NamedTemporaryFile(delete=False, suffix=os.path.splitext(current_file_name)[1]) as tmp_file:
+                                 tmp_file.write(uploaded_file.getvalue())
+                                 file_path = tmp_file.name
+                             
+                             # Determine input type (image or pdf) for the workflow
+                             file_extension = os.path.splitext(current_file_name)[1].lower()
+                             input_type = "image" if file_extension in ['.jpg', '.jpeg', '.png'] else "pdf"
+
+                             # Call the workflow with the file path
+                             # The workflow is designed for single input, so we call it per file
+                             result = process_input(file_path, input_type)
+                             
+                             results_dict[current_file_name] = result
+                         
+                         except Exception as e:
+                             st.error(f"Error processing {current_file_name}: {e}")
+                             st.text(traceback.format_exc()) # Show traceback
+                             # Store error information
+                             results_dict[current_file_name] = {"error": f"Failed during processing: {e}"}
+                         finally:
+                             # Clean up the temporary file
+                             if file_path and os.path.exists(file_path):
+                                 try:
+                                     os.unlink(file_path)
+                                 except Exception as unlink_err:
+                                      st.warning(f"Could not delete temp file {file_path}: {unlink_err}")
+                             # Update progress bar after processing this file is done
+                             progress_bar.progress((i + 1) / total_files, text=progress_text) 
+                             
+                 # Store results in session state after processing all files
+                 st.session_state.invoice_results = results_dict
+                 progress_bar.progress(1.0, text=f"Completed processing {total_files} invoice(s).") # Final progress update
+                 # Consider hiding progress bar after a short delay or leaving it at 100%
+                 # progress_bar.empty() # Remove progress bar after completion
+                 st.success(f"Finished processing {total_files} invoice(s).")
+
+
+        # --- MODIFIED: Display results from session state ---
+        if st.session_state.invoice_results:
+            st.subheader("Processing Results")
+            for filename, result_data in st.session_state.invoice_results.items():
+                with st.expander(f"Results for: {filename}", expanded=True): # Expand by default
+                     # Pass the original filename for use in download buttons (though none are used now)
+                     display_single_invoice_result(result_data, filename) 
 
 if __name__ == "__main__":
     main() 
