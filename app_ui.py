@@ -134,13 +134,17 @@ def display_single_invoice_result(result: Dict[str, Any], original_filename: str
     summary = validation_details.get("summary", "") if validation_details else ""
     discrepancies = validation_details.get("discrepancies", []) if validation_details else []
 
+    # Get the extracted invoice data and PO data for comparison
+    invoice_data = result.get("extracted_invoice_data", {})
+    # Corrected PO data handling:
+    # For headers, we can take from the first PO line (assuming consistency for a given PO)
+    po_data_for_headers = result.get("po_data", [{}])[0] if result.get("po_data") else {}
+    # For line items, we need the full list of PO lines
+    po_line_items_list = result.get("po_data", [])
+
     # --- Display Status First ---
     if status == "valid":
         st.success("✅ Status: VALID")
-        # --- REMOVED Summary and Generic Message ---
-        # if summary:
-        #     st.caption(f"Summary: {summary}")
-        # st.info("Key fields (Vendor, PO Number, Totals, Line Items) were compared and matched.")
         
         # --- ADDED: Display list of key validated fields ---
         st.markdown("**Validated Fields:**")
@@ -188,66 +192,128 @@ def display_single_invoice_result(result: Dict[str, Any], original_filename: str
                 if notes:
                     st.caption(f"Note: {notes}")
                 st.markdown("---") # Separator
-        # else: # Commented out: If status is invalid, summary should cover it or it implies no specific discrepancies were found by LLM, just a general invalid state.
-            # st.info("Status is invalid, but no specific discrepancy details were provided by the LLM.")
 
-        # --- NEW: Display Verified Header Fields from LLM --- 
-        verified_header_fields = validation_details.get("verified_header_fields", []) if validation_details else []
-        if verified_header_fields:
-            st.subheader("Additionally Verified Header Fields (LLM Identified Matches):")
-            for item in verified_header_fields:
-                field = item.get('field', 'Unknown Field')
-                # inv_val = item.get('invoice_value', 'N/A') # No longer displaying inv_val
-                # po_val = item.get('po_value', 'N/A')   # No longer displaying po_val
+        # --- NEW: Auto-detect matching fields ---
+        verified_fields = []
+        if invoice_data and po_data_for_headers: # Use po_data_for_headers here
+            # Check header fields
+            field_mappings = {
+                "purchase_order_number": "ponumber",
+                "vendor_name": "vendorname", # Added Vendor Name
+                "total_amount": "totalamount",
+                "subtotal_amount": "subtotalamount",
+                "tax_amount": "taxamount",
+                "shipping_cost": "shippingcost",
+                "currency": "currency"
+            }
+            
+            for inv_field, po_field in field_mappings.items():
+                inv_value = invoice_data.get(inv_field)
+                po_value = po_data_for_headers.get(po_field) # Use po_data_for_headers
+                if inv_value is not None and po_value is not None:
+                    # Convert to same type for comparison
+                    try:
+                        inv_value = float(inv_value) if isinstance(inv_value, (int, float)) else str(inv_value).strip()
+                        po_value = float(po_value) if isinstance(po_value, (int, float)) else str(po_value).strip()
+                        if inv_value == po_value:
+                            verified_fields.append({
+                                "field": inv_field.replace("_", " ").title(),
+                                "invoice_value": inv_value,
+                                "po_value": po_value,
+                                "notes": "Matches PO data"
+                            })
+                    except (ValueError, TypeError):
+                        continue
 
-                # Simplified display: Field Name with a green tick
-                st.markdown(f"- **{field}** ✅")
-            st.markdown("---") # Separator after the list of verified header fields
+            # Check line items
+            verified_line_items = []
+            invoice_line_items = invoice_data.get("line_items", [])
+            # po_line_items = [item for item in po_data.get("line_items", []) if item.get("itemdescription")] # Old logic using incorrect po_data structure for lines
+            
+            for inv_item in invoice_line_items:
+                # Try to find a matching PO line item
+                for po_item in po_line_items_list: # Iterate through the full list of PO lines
+                    inv_desc = inv_item.get("description", "").strip().lower()
+                    po_desc = po_item.get("itemdescription", "").strip().lower()
 
-        # --- NEW: Display Verified Line Item Details from LLM ---
-        verified_line_item_details = validation_details.get("verified_line_item_details", []) if validation_details else []
-        if verified_line_item_details:
-            st.subheader("Verified Line Item Details (LLM Identified Sub-Field Matches):")
-            for line_item_match in verified_line_item_details:
-                inv_desc = line_item_match.get("invoice_line_description", "N/A")
-                # po_desc = line_item_match.get("matched_po_line_description", "N/A") # po_desc can be shown if needed
-                fields_matched = line_item_match.get("fields_matched", [])
-                notes = line_item_match.get("notes", "")
+                    if inv_desc and po_desc and inv_desc == po_desc:
+                        current_matching_fields = []
+                        # Check HSN
+                        inv_hsn = inv_item.get("hsn")
+                        po_hsn = po_item.get("hsn")
+                        if inv_hsn is not None and po_hsn is not None and str(inv_hsn).strip() == str(po_hsn).strip():
+                            current_matching_fields.append("HSN Code")
+                        
+                        # Check quantity (even if overall discrepancy, list if it matches for this pair)
+                        inv_qty = inv_item.get("quantity")
+                        po_qty = po_item.get("quantityordered")
+                        try:
+                            if inv_qty is not None and po_qty is not None and float(inv_qty) == float(po_qty):
+                                current_matching_fields.append("Quantity")
+                        except (ValueError, TypeError):
+                            pass
 
-                st.markdown(f"**For Invoice Line Item:** `{inv_desc}`")
-                if fields_matched:
+                        # Check unit price
+                        inv_up = inv_item.get("unit_price")
+                        po_up = po_item.get("unitprice")
+                        try:
+                            if inv_up is not None and po_up is not None and float(inv_up) == float(po_up):
+                                current_matching_fields.append("Unit Price")
+                        except (ValueError, TypeError):
+                            pass
+                            
+                        # Check line total
+                        inv_lt = inv_item.get("line_total")
+                        po_lt = po_item.get("linetotal")
+                        try:
+                            if inv_lt is not None and po_lt is not None and float(inv_lt) == float(po_lt):
+                                current_matching_fields.append("Line Total")
+                        except (ValueError, TypeError):
+                            pass
+                            
+                        if current_matching_fields:
+                            verified_line_items.append({
+                                "invoice_line_description": inv_item.get("description"),
+                                "matched_po_line_description": po_item.get("itemdescription"),
+                                "fields_matched": current_matching_fields,
+                                "notes": f"These specific fields match PO: {', '.join(current_matching_fields)}"
+                            })
+                        break # Found a match for inv_item, move to next inv_item
+
+        # --- Display Verified Header Fields ---
+        if verified_fields:
+            st.subheader("Additionally Validated Fields")
+            for field in verified_fields:
+                st.markdown(f"- **{field['field']}** ✅")
+            st.markdown("---")
+
+        # --- Display Verified Line Item Details ---
+        if verified_line_items:
+            st.subheader("Validated Fields Line Item Details")
+            for item in verified_line_items:
+                st.markdown(f"**For Invoice Line Item:** `{item['invoice_line_description']}`")
+                if item.get("fields_matched"):
                     st.markdown("Matching PO Details Found For:")
-                    for matched_field_name in fields_matched:
-                        st.markdown(f"- {matched_field_name} ✅")
-                if notes:
-                    st.caption(f"Note: {notes}")
-                st.markdown("---") # Separator
+                    for matched_field in item["fields_matched"]:
+                        st.markdown(f"- {matched_field} ✅")
+                if item.get("notes"):
+                    st.caption(f"Note: {item['notes']}")
+                st.markdown("---")
         
-    elif status == "needs_review": # Handle the review status
+    elif status == "needs_review":
          st.warning("⚠️ Status: NEEDS REVIEW")
          if summary:
              st.write(f"**Summary:** {summary}")
          if validation_details and validation_details.get("details"):
               st.caption(f"Details: {validation_details['details']}")
-         # Optionally show raw response if available in 'details' or other field (Removed as per request)
-         # if validation_details.get("raw_response"):
-         #      with st.expander("Raw LLM Response Fragment (for Debugging)"):
-         #           st.code(validation_details["raw_response"])
 
     elif result.get("error"):
-        # Handle cases where validation didn't run due to prior error
         st.error(f"🛑 Error: {result['error']}")
         st.info("Processing stopped before validation could be completed.")
-        # REMOVED partial data display and download button
 
-    else: # Fallback for other unknown statuses or missing validation results
+    else:
         st.info(f"Status: {str(status).upper()}")
         st.write("Validation did not produce a standard result.")
-        # REMOVED JSON display
-
-    # --- REMOVED PO Data Display ---
-    # --- REMOVED Extracted Data Display and Download Button ---
-    # --- REMOVED Validation Result Download Button ---
 
 # --- Main App ---
 def main():
