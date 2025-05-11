@@ -13,7 +13,7 @@ import datetime # Added for filenames
 # Import our workflow
 from invoice_workflow import process_input
 
-# Set page configuration
+# Set page configuration with custom theme
 st.set_page_config(
     page_title="Invoice Cortex Agent",
     page_icon="📊",
@@ -21,109 +21,163 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
+# Custom CSS for styling
+st.markdown("""
+    <style>
+    .main {
+        background-color: #f8f9fa;
+    }
+    .stTabs [data-baseweb="tab-list"] {
+        gap: 2rem;
+    }
+    .stTabs [data-baseweb="tab"] {
+        height: 4rem;
+        white-space: pre-wrap;
+        background-color: #f8f9fa;
+        border-radius: 4px 4px 0 0;
+        gap: 1rem;
+        padding-top: 10px;
+        padding-bottom: 10px;
+    }
+    .stTabs [aria-selected="true"] {
+        background-color: #FF6B35;
+        color: white;
+    }
+    .stButton>button {
+        background-color: #FF6B35;
+        color: white;
+        border-radius: 5px;
+        padding: 0.5rem 1rem;
+        border: none;
+    }
+    .stButton>button:hover {
+        background-color: #E85D2C;
+        color: black;
+    }
+    .success-box {
+        background-color: #d4edda;
+        border: 1px solid #c3e6cb;
+        border-radius: 5px;
+        padding: 1rem;
+        margin: 1rem 0;
+    }
+    .error-box {
+        background-color: #f8d7da;
+        border: 1px solid #f5c6cb;
+        border-radius: 5px;
+        padding: 1rem;
+        margin: 1rem 0;
+    }
+    .warning-box {
+        background-color: #fff3cd;
+        border: 1px solid #ffeeba;
+        border-radius: 5px;
+        padding: 1rem;
+        margin: 1rem 0;
+    }
+    .info-box {
+        background-color: #d1ecf1;
+        border: 1px solid #bee5eb;
+        border-radius: 5px;
+        padding: 1rem;
+        margin: 1rem 0;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+
 # --- Helper Functions ---
 
 def display_query_results(result: Dict[str, Any]):
     """Display the results from the query workflow branch."""
-    st.subheader("Query Results")
+    st.markdown("### 📊 Query Results")
     
     # Create tabs for the different output representations
-    summary_tab, graph_tab, table_tab, sql_tab = st.tabs(["Summary", "Graph", "Table", "SQL Query"])
+    summary_tab, graph_tab, table_tab, sql_tab = st.tabs(["📝 Summary", "📈 Graph", "📋 Table", "💻 SQL Query"])
     
     # Tab 1: Summary
     with summary_tab:
         if result.get("summary"):
-            st.markdown("**Summary:**")
-            st.write(result["summary"])
+            st.markdown("#### Summary")
+            st.markdown(f'<div class="info-box">{result["summary"]}</div>', unsafe_allow_html=True)
         else:
-            st.info("No summary available for this query.")
+            st.info("ℹ️ No summary available for this query.")
     
     # Tab 2: Graph (Visualization)
     with graph_tab:
         if result.get("plotly_chart_json"):
             try:
                 chart_json = result["plotly_chart_json"]
-                # Check if chart_json is already a dict or needs loading
                 if isinstance(chart_json, str):
                     chart_data = json.loads(chart_json)
                 elif isinstance(chart_json, dict):
-                    chart_data = chart_json # Already a dict
+                    chart_data = chart_json
                 else:
                     raise TypeError("plotly_chart_json is not a string or dictionary")
                 
                 fig = go.Figure(data=chart_data['data'], layout=chart_data['layout'])
                 st.plotly_chart(fig, use_container_width=True)
-            except json.JSONDecodeError as e:
-                st.error(f"Error decoding Plotly chart JSON: {e}")
-                st.text(result["plotly_chart_json"]) # Show raw json on error
             except Exception as e:
-                st.error(f"Error displaying Plotly chart: {e}")
+                st.error(f"❌ Error displaying Plotly chart: {e}")
         else:
-            st.info("No visualization available for this query.")
+            st.info("ℹ️ No visualization available for this query.")
     
     # Tab 3: Table
     with table_tab:
-        df_to_download = None # Initialize df for download button
-        # Check for and display table_data (from visualize_data_node)
+        df_to_download = None
         if result.get("table_data"):
             try:
                 table_data = result["table_data"]
                 if isinstance(table_data, list) and table_data:
                     df = pd.DataFrame(table_data)
-                    st.dataframe(df)
-                    df_to_download = df # Assign for download
+                    st.dataframe(df, use_container_width=True)
+                    df_to_download = df
                 elif isinstance(table_data, list) and not table_data:
-                    st.info("The query returned an empty table_data list.")
+                    st.info("ℹ️ The query returned an empty table_data list.")
                 else:
-                    st.warning(f"Table data is not in the expected list format. Type: {type(table_data)}")
-                    # Try to display it anyway if possible
+                    st.warning(f"⚠️ Table data is not in the expected list format. Type: {type(table_data)}")
                     st.write("Attempting to display data:")
                     st.write(table_data)
             except Exception as e:
-                st.error(f"Error displaying table_data: {e}")
-        # Fallback: Check for result_dataframe if table_data wasn't found
+                st.error(f"❌ Error displaying table_data: {e}")
         elif result.get("result_dataframe") is not None:
             try:
                 df = result["result_dataframe"]
-                if isinstance(df, pd.DataFrame) and not df.empty: # Ensure it's a non-empty DataFrame
-                    st.dataframe(df)
-                    df_to_download = df # Assign for download
+                if isinstance(df, pd.DataFrame) and not df.empty:
+                    st.dataframe(df, use_container_width=True)
+                    df_to_download = df
                 elif isinstance(df, pd.DataFrame) and df.empty:
-                    st.info("The result DataFrame is empty.")
+                    st.info("ℹ️ The result DataFrame is empty.")
                 else:
-                     st.warning(f"result_dataframe is not a DataFrame. Type: {type(df)}")
-                     st.write(df) # Show the raw data
+                    st.warning(f"⚠️ result_dataframe is not a DataFrame. Type: {type(df)}")
+                    st.write(df)
             except Exception as e:
-                st.error(f"Error displaying result_dataframe: {e}")
-        # Display raw query result if it's just text and no dataframe/table was shown
+                st.error(f"❌ Error displaying result_dataframe: {e}")
         elif result.get("query_result") and isinstance(result["query_result"], str):
             st.text(result["query_result"])
         else:
-            st.info("No table data available for this query.")
+            st.info("ℹ️ No table data available for this query.")
             
-        # --- KEPT: Download Button for Table Data ---
         if df_to_download is not None:
             try:
                 csv_data = df_to_download.to_csv(index=False).encode('utf-8')
                 st.download_button(
-                    label="Download Table Data (CSV) 💾",
+                    label="📥 Download Table Data (CSV)",
                     data=csv_data,
                     file_name=f"query_results_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.csv",
                     mime="text/csv",
                 )
             except Exception as e:
-                 st.warning(f"Could not prepare table data for download: {e}")
+                st.warning(f"⚠️ Could not prepare table data for download: {e}")
             
     # Tab 4: SQL Query
     with sql_tab:
         if result.get("query_code"):
             st.code(result["query_code"], language="sql")
         else:
-            st.info("No SQL query generated for this request.")
+            st.info("ℹ️ No SQL query generated for this request.")
 
-    # Display any errors
     if result.get("error"):
-        st.error(f"Workflow Error: {result['error']}")
+        st.error(f"❌ Workflow Error: {result['error']}")
 
 # --- MODIFIED ---
 def display_single_invoice_result(result: Dict[str, Any], original_filename: str):
@@ -144,10 +198,10 @@ def display_single_invoice_result(result: Dict[str, Any], original_filename: str
 
     # --- Display Status First ---
     if status == "valid":
-        st.success("✅ Status: VALID")
+        st.markdown('<div class="success-box">✅ Status: VALID</div>', unsafe_allow_html=True)
         
         # --- ADDED: Display list of key validated fields ---
-        st.markdown("**Validated Fields:**")
+        st.markdown("#### Validated Fields")
         key_validated_fields = [
             "Vendor Name",
             "PO Number",
@@ -168,13 +222,17 @@ def display_single_invoice_result(result: Dict[str, Any], original_filename: str
         elif not reason:
              reason = "Validation Failed (Unknown Reason)"
              
-        st.error(f"❌ Status: INVALID - {reason}")
+        st.markdown(f'<div class="error-box">❌ Status: INVALID - {reason}</div>', unsafe_allow_html=True)
         if summary:
             st.write(f"**Summary:** {summary}")
+
+        # Initialize verified_fields and verified_line_items at the start of this block
+        verified_fields = []
+        verified_line_items = []
         
         # --- Display Mismatched Fields (Discrepancies) ---
         if discrepancies:
-            st.subheader("Mismatched Fields Identified by LLM:")
+            st.markdown("#### 🔍 Mismatched Fields")
             for item in discrepancies:
                 field = item.get('field', 'Unknown Field')
                 inv_val = item.get('invoice_value', 'N/A')
@@ -194,7 +252,6 @@ def display_single_invoice_result(result: Dict[str, Any], original_filename: str
                 st.markdown("---") # Separator
 
         # --- NEW: Auto-detect matching fields ---
-        verified_fields = []
         if invoice_data and po_data_for_headers: # Use po_data_for_headers here
             # Check header fields
             field_mappings = {
@@ -226,7 +283,6 @@ def display_single_invoice_result(result: Dict[str, Any], original_filename: str
                         continue
 
             # Check line items
-            verified_line_items = []
             invoice_line_items = invoice_data.get("line_items", [])
             # po_line_items = [item for item in po_data.get("line_items", []) if item.get("itemdescription")] # Old logic using incorrect po_data structure for lines
             
@@ -282,14 +338,14 @@ def display_single_invoice_result(result: Dict[str, Any], original_filename: str
 
         # --- Display Verified Header Fields ---
         if verified_fields:
-            st.subheader("Additionally Validated Fields")
+            st.markdown("#### ✅ Additionally Validated Fields")
             for field in verified_fields:
                 st.markdown(f"- **{field['field']}** ✅")
             st.markdown("---")
 
         # --- Display Verified Line Item Details ---
         if verified_line_items:
-            st.subheader("Validated Fields Line Item Details")
+            st.markdown("#### 📋 Validated Fields Line Item Details")
             for item in verified_line_items:
                 st.markdown(f"**For Invoice Line Item:** `{item['invoice_line_description']}`")
                 if item.get("fields_matched"):
@@ -301,14 +357,14 @@ def display_single_invoice_result(result: Dict[str, Any], original_filename: str
                 st.markdown("---")
         
     elif status == "needs_review":
-         st.warning("⚠️ Status: NEEDS REVIEW")
+         st.markdown('<div class="warning-box">⚠️ Status: NEEDS REVIEW</div>', unsafe_allow_html=True)
          if summary:
              st.write(f"**Summary:** {summary}")
          if validation_details and validation_details.get("details"):
               st.caption(f"Details: {validation_details['details']}")
 
     elif result.get("error"):
-        st.error(f"🛑 Error: {result['error']}")
+        st.markdown(f'<div class="error-box">🛑 Error: {result["error"]}</div>', unsafe_allow_html=True)
         st.info("Processing stopped before validation could be completed.")
 
     else:
@@ -317,15 +373,15 @@ def display_single_invoice_result(result: Dict[str, Any], original_filename: str
 
 # --- Main App ---
 def main():
-    st.title("Invoice Cortex Agent")
+    st.markdown("# 📊 Invoice Cortex Agent")
     
     # Create tabs for the different functionalities
-    query_tab, invoice_tab = st.tabs(["Data Query", "Invoice Validation"])
+    query_tab, invoice_tab = st.tabs(["🔍 Data Query", "📄 Invoice Validation"])
     
     # Query Processing Tab
     with query_tab:
-        st.header("Data Query")
-        st.write("Enter a natural language query about purchase orders, vendors, or sales data.")
+        st.markdown("### 🔍 Data Query")
+        st.markdown("Enter a natural language query about purchase orders, vendors, or sales data.")
         
         # Text input for query
         query_text = st.text_area("Enter your query:", 
@@ -333,9 +389,9 @@ def main():
                              height=100)
         
         # Process button
-        if st.button("Process Query", key="process_query"):
+        if st.button("🚀 Process Query", key="process_query"):
             if query_text:
-                with st.spinner("Processing query..."):
+                with st.spinner("⏳ Processing query..."):
                     try:
                         # Call the workflow
                         # Ensure the user query is passed correctly in initial state
@@ -348,18 +404,18 @@ def main():
                         # Display results
                         display_query_results(result)
                     except Exception as e:
-                         st.error(f"An error occurred during workflow execution: {e}")
+                         st.error(f"❌ An error occurred during workflow execution: {e}")
                          st.text(traceback.format_exc()) # Show traceback for debugging
             else:
-                st.warning("Please enter a query.")
+                st.warning("⚠️ Please enter a query.")
     
     # Invoice Validation Tab
     with invoice_tab:
-        st.header("Invoice Validation")
-        st.write("Upload one or more invoice images or PDFs to extract and validate against purchase order data.")
+        st.markdown("### 📄 Invoice Validation")
+        st.markdown("Upload one or more invoice images or PDFs to extract and validate against purchase order data.")
         
         # --- MODIFIED: File uploader for multiple files ---
-        uploaded_files = st.file_uploader("Upload Invoices (PDF, JPG, PNG)", 
+        uploaded_files = st.file_uploader("📤 Upload Invoices (PDF, JPG, PNG)", 
                                        type=["pdf", "jpg", "jpeg", "png"],
                                        accept_multiple_files=True) # Allow multiple files
         
@@ -368,22 +424,22 @@ def main():
             st.session_state.invoice_results = {}
 
         if uploaded_files:
-             st.write(f"Ready to process {len(uploaded_files)} file(s).")
+             st.markdown(f"📦 Ready to process {len(uploaded_files)} file(s).")
              # Process button
-             if st.button("Process Invoices", key="process_invoices"):
+             if st.button("🚀 Process Invoices", key="process_invoices"):
                  
                  # Clear previous results before processing new batch
                  st.session_state.invoice_results = {} 
                  
-                 progress_bar = st.progress(0, text="Initializing...")
+                 progress_bar = st.progress(0, text="⏳ Initializing...")
                  total_files = len(uploaded_files)
                  results_dict = {} # Store results here {filename: result_dict}
                  
-                 with st.spinner(f"Processing {total_files} invoices sequentially..."):
+                 with st.spinner(f"⏳ Processing {total_files} invoices sequentially..."):
                      for i, uploaded_file in enumerate(uploaded_files):
                          file_path = None # Ensure file_path is reset
                          current_file_name = uploaded_file.name
-                         progress_text = f"Processing file {i+1}/{total_files}: {current_file_name}"
+                         progress_text = f"�� Processing file {i+1}/{total_files}: {current_file_name}"
                          progress_bar.progress((i) / total_files, text=progress_text) # Update progress before processing
                          
                          try:
@@ -403,7 +459,7 @@ def main():
                              results_dict[current_file_name] = result
                          
                          except Exception as e:
-                             st.error(f"Error processing {current_file_name}: {e}")
+                             st.error(f"❌ Error processing {current_file_name}: {e}")
                              st.text(traceback.format_exc()) # Show traceback
                              # Store error information
                              results_dict[current_file_name] = {"error": f"Failed during processing: {e}"}
@@ -413,23 +469,23 @@ def main():
                                  try:
                                      os.unlink(file_path)
                                  except Exception as unlink_err:
-                                      st.warning(f"Could not delete temp file {file_path}: {unlink_err}")
+                                      st.warning(f"⚠️ Could not delete temp file {file_path}: {unlink_err}")
                              # Update progress bar after processing this file is done
                              progress_bar.progress((i + 1) / total_files, text=progress_text) 
                              
                  # Store results in session state after processing all files
                  st.session_state.invoice_results = results_dict
-                 progress_bar.progress(1.0, text=f"Completed processing {total_files} invoice(s).") # Final progress update
+                 progress_bar.progress(1.0, text=f"✅ Completed processing {total_files} invoice(s).") # Final progress update
                  # Consider hiding progress bar after a short delay or leaving it at 100%
                  # progress_bar.empty() # Remove progress bar after completion
-                 st.success(f"Finished processing {total_files} invoice(s).")
+                 st.success(f"🎉 Finished processing {total_files} invoice(s).")
 
 
         # --- MODIFIED: Display results from session state ---
         if st.session_state.invoice_results:
-            st.subheader("Processing Results")
+            st.markdown("### 📊 Processing Results")
             for filename, result_data in st.session_state.invoice_results.items():
-                with st.expander(f"Results for: {filename}", expanded=True): # Expand by default
+                with st.expander(f"📄 Results for: {filename}", expanded=True): # Expand by default
                      # Pass the original filename for use in download buttons (though none are used now)
                      display_single_invoice_result(result_data, filename) 
 
